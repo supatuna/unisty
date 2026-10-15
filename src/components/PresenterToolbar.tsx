@@ -178,6 +178,28 @@ export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onS
                 </a>
               </div>
               <div className="space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    mockStore.logout();
+                    window.location.reload();
+                  }}
+                  className={`w-full text-left p-2 rounded-xl text-xs transition flex items-center justify-between border ${
+                    !mockStore.isLoggedIn()
+                      ? 'border-teal-500 bg-teal-50/60 text-teal-900 font-semibold'
+                      : 'border-slate-200/80 hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-[10px]">
+                      ?
+                    </div>
+                    <div>
+                      <p className="font-medium text-[11px]">Người mới (Chưa đăng nhập)</p>
+                    </div>
+                  </div>
+                  {!mockStore.isLoggedIn() && <UserCheck className="w-3.5 h-3.5 text-teal-600 shrink-0" />}
+                </button>
                 {allUsers.map((user) => {
                   const isSelected = user.id === currentUser.id;
                   return (

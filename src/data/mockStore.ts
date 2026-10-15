@@ -164,6 +164,15 @@ class MockStore {
     return user || this.data.users[0];
   }
 
+  public isLoggedIn(): boolean {
+    return Boolean(this.data.currentUserId && this.data.users.some(u => u.id === this.data.currentUserId));
+  }
+
+  public logout() {
+    this.data.currentUserId = '';
+    this.write(this.data);
+  }
+
   public setCurrentUserId(userId: string) {
     this.data.currentUserId = userId;
     this.write(this.data);
