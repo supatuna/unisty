@@ -1,7 +1,7 @@
 import { User, Listing, Contract, Review, Message, Wallet, LedgerEntry, Delivery, RevisionRequest, Dispute, Proposal } from '../types';
 import { INITIAL_USERS, INITIAL_LISTINGS, INITIAL_CONTRACTS, INITIAL_REVIEWS, INITIAL_DISPUTES } from './mockFixtures';
 
-const STORAGE_KEY = 'unisty.demo.v1';
+const STORAGE_KEY = 'unisty.demo.v2';
 
 export const INITIAL_PROPOSALS: Proposal[] = [
   {
@@ -126,7 +126,15 @@ class MockStore {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.proposals) return parsed;
+        if (parsed.proposals && parsed.users) {
+          const initial = loadInitialData();
+          return {
+            ...initial,
+            ...parsed,
+            contracts: parsed.contracts && parsed.contracts.length >= initial.contracts.length ? parsed.contracts : initial.contracts,
+            disputes: parsed.disputes && parsed.disputes.length > 0 ? parsed.disputes : initial.disputes,
+          };
+        }
       }
     } catch {
       // Fallback
