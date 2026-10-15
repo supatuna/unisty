@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Clock, Calendar } from 'lucide-react';
 import { Listing } from '../types';
+import { UserAvatar } from './UserAvatar';
 
 interface ListingCardProps {
   listing: Listing;
@@ -19,9 +20,14 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         {/* Author Header */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2.5">
-            <div className={`w-7 h-7 rounded-full ${listing.ownerAvatarColor} text-white flex items-center justify-center text-xs font-bold shrink-0`}>
-              {listing.ownerAvatar}
-            </div>
+            <UserAvatar
+              name={listing.ownerName}
+              avatarUrl={listing.ownerAvatarUrl}
+              avatarInitial={listing.ownerAvatar}
+              avatarColor={listing.ownerAvatarColor}
+              size="xs"
+              shape="circle"
+            />
             <div className="truncate">
               <span className="text-xs font-semibold text-slate-800 block truncate">
                 {listing.ownerName}

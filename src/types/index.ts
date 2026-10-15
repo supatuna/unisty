@@ -25,6 +25,7 @@ export interface User {
   email: string;
   avatarInitial: string;
   avatarColor: string; // Tailwind color class for pastel avatar
+  avatarUrl?: string; // Tùy chọn: URL ảnh cá nhân hoặc ảnh tải lên Base64
   role: UserRole;
   isDueVerified: boolean;
   isLocked: boolean;
@@ -51,6 +52,7 @@ export interface Listing {
   ownerName: string;
   ownerAvatar: string;
   ownerAvatarColor: string;
+  ownerAvatarUrl?: string; // Ảnh đại diện của chủ bài đăng (nếu có)
   isOwnerDue: boolean;
   kind: ListingKind;
   category: ListingCategory;

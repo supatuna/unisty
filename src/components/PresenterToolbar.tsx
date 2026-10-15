@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sliders, RefreshCw, UserCheck, Shield, ExternalLink, X, User, CreditCard, Sparkles, Scale, FileText, CheckCircle2 } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
+import { UserAvatar } from './UserAvatar';
 
 export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onStateChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -170,9 +171,14 @@ export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onS
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <div className={`w-5 h-5 rounded-full ${user.avatarColor} text-white flex items-center justify-center text-[9px] font-bold shrink-0`}>
-                          {user.avatarInitial}
-                        </div>
+                        <UserAvatar
+                          name={user.name}
+                          avatarUrl={user.avatarUrl}
+                          avatarInitial={user.avatarInitial}
+                          avatarColor={user.avatarColor}
+                          size="xs"
+                          shape="circle"
+                        />
                         <div className="truncate">
                           <p className="truncate font-medium text-[11px]">{user.name}</p>
                         </div>

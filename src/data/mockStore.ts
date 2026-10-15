@@ -187,7 +187,7 @@ class MockStore {
     };
 
     // Đồng bộ thông tin tên và avatar vào các tin đăng của người dùng
-    if (updates.name || updates.avatarInitial || updates.avatarColor) {
+    if (updates.name || updates.avatarInitial || updates.avatarColor || updates.avatarUrl !== undefined) {
       const updatedUser = this.data.users[userIndex];
       this.data.listings = this.data.listings.map(l => {
         if (l.ownerId === userId) {
@@ -196,6 +196,7 @@ class MockStore {
             ownerName: updatedUser.name,
             ownerAvatar: updatedUser.avatarInitial,
             ownerAvatarColor: updatedUser.avatarColor,
+            ownerAvatarUrl: updatedUser.avatarUrl,
           };
         }
         return l;

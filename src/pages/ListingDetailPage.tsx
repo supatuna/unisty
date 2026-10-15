@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, Clock, Calendar, AlertCircle, ExternalLink, CheckCircle2, UserCheck } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
 import { showToast } from '../components/Toast';
+import { UserAvatar } from '../components/UserAvatar';
 
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -108,9 +109,15 @@ export const ListingDetailPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-100">
               <div className="flex items-center gap-3">
                 <Link to={`/profiles/${listing.ownerId}`} className="shrink-0 group">
-                  <div className={`w-11 h-11 rounded-full ${listing.ownerAvatarColor} text-white flex items-center justify-center font-bold text-sm shadow-sm group-hover:scale-105 transition`}>
-                    {listing.ownerAvatar}
-                  </div>
+                  <UserAvatar
+                    name={listing.ownerName}
+                    avatarUrl={listing.ownerAvatarUrl}
+                    avatarInitial={listing.ownerAvatar}
+                    avatarColor={listing.ownerAvatarColor}
+                    size="md"
+                    shape="circle"
+                    className="shadow-sm group-hover:scale-105 transition"
+                  />
                 </Link>
                 <div>
                   <div className="flex items-center gap-2">
@@ -167,9 +174,13 @@ export const ListingDetailPage: React.FC = () => {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex items-center gap-2.5">
                           <Link to={`/profiles/${prop.senderId}`} className="shrink-0">
-                            <div className={`w-8 h-8 rounded-full ${prop.senderAvatarColor} text-white flex items-center justify-center font-bold text-xs`}>
-                              {prop.senderAvatar}
-                            </div>
+                            <UserAvatar
+                              name={prop.senderName}
+                              avatarInitial={prop.senderAvatar}
+                              avatarColor={prop.senderAvatarColor}
+                              size="sm"
+                              shape="circle"
+                            />
                           </Link>
                           <div>
                             <div className="flex items-center gap-2">

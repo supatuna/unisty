@@ -8,6 +8,7 @@ import {
 import { mockStore } from '../data/mockStore';
 import { ListingCard } from '../components/ListingCard';
 import { EditProfileModal } from '../components/EditProfileModal';
+import { UserAvatar } from '../components/UserAvatar';
 
 export const ProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -66,9 +67,15 @@ export const ProfilePage: React.FC = () => {
           
           {/* Avatar & Main Info */}
           <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-            <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-3xl ${user.avatarColor} text-white flex items-center justify-center font-extrabold text-3xl sm:text-4xl shadow-md ring-4 ring-white shrink-0`}>
-              {user.avatarInitial}
-            </div>
+            <UserAvatar
+              name={user.name}
+              avatarUrl={user.avatarUrl}
+              avatarInitial={user.avatarInitial}
+              avatarColor={user.avatarColor}
+              size="2xl"
+              shape="rounded"
+              className="shadow-md ring-4 ring-white shrink-0"
+            />
 
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">

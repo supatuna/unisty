@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ShieldCheck, PlusCircle, Briefcase, Compass, Wallet as WalletIcon, User, ChevronDown, Shield, LogIn } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
 import { AuthModal } from './AuthModal';
+import { UserAvatar } from './UserAvatar';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
@@ -116,9 +117,15 @@ export const Navbar: React.FC = () => {
               className="flex items-center gap-2 pl-1 p-1 rounded-xl hover:bg-slate-100 transition group focus:outline-none"
               title="Tài khoản & Portfolio"
             >
-              <div className={`w-8 h-8 rounded-full ${currentUser.avatarColor} text-white flex items-center justify-center text-xs font-bold ring-2 ring-transparent group-hover:ring-teal-500/40 transition shrink-0`}>
-                {currentUser.avatarInitial}
-              </div>
+              <UserAvatar
+                name={currentUser.name}
+                avatarUrl={currentUser.avatarUrl}
+                avatarInitial={currentUser.avatarInitial}
+                avatarColor={currentUser.avatarColor}
+                size="sm"
+                shape="circle"
+                className="ring-2 ring-transparent group-hover:ring-teal-500/40 transition shrink-0"
+              />
               <div className="hidden lg:block text-left text-xs leading-tight">
                 <p className="font-semibold text-slate-800 flex items-center gap-1">
                   <span>{currentUser.name}</span>

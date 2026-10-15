@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   X, CheckCircle2, Plus, Trash2, Award, GraduationCap, 
-  ExternalLink, Sparkles, ShieldCheck, Tag, FileText 
+  ExternalLink, Sparkles, ShieldCheck, Tag, FileText,
+  Camera, Upload, Image as ImageIcon, Link as LinkIcon
 } from 'lucide-react';
 import { User, Achievement, PortfolioItem } from '../types';
 import { mockStore } from '../data/mockStore';
 import { showToast } from './Toast';
+import { UserAvatar } from './UserAvatar';
 
 interface EditProfileModalProps {
   user: User;
@@ -23,6 +25,13 @@ const AVATAR_COLORS = [
   'bg-violet-600',
   'bg-sky-600',
   'bg-slate-900',
+];
+
+const PRESET_AVATARS = [
+  { label: 'Nữ sinh thanh lịch', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' },
+  { label: 'Nam sinh năng động', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80' },
+  { label: 'Sinh viên NCKH', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80' },
+  { label: 'Doanh nhân / Founder', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80' },
 ];
 
 const SUGGESTED_SKILLS = [
@@ -49,6 +58,51 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [bio, setBio] = useState(user.bio || '');
   const [avatarColor, setAvatarColor] = useState(user.avatarColor || 'bg-teal-600');
   const [avatarInitial, setAvatarInitial] = useState(user.avatarInitial || user.name.charAt(0).toUpperCase());
+  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // File upload handler with square crop & compression
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Vui lòng chỉ chọn tệp hình ảnh (PNG, JPG, WebP)!', 'error');
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      showToast('Ảnh quá lớn (>8MB). Vui lòng chọn ảnh dung lượng nhỏ hơn!', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 320;
+        const width = img.width;
+        const height = img.height;
+        const minSide = Math.min(width, height);
+        const startX = (width - minSide) / 2;
+        const startY = (height - minSide) / 2;
+
+        canvas.width = maxDim;
+        canvas.height = maxDim;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, startX, startY, minSide, minSide, 0, 0, maxDim, maxDim);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          setAvatarUrl(compressedDataUrl);
+          showToast('Đã tải ảnh cá nhân lên thành công!', 'success');
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   // Skills
   const [skills, setSkills] = useState<string[]>(user.skills || []);
@@ -144,6 +198,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       bio: bio.trim(),
       avatarColor,
       avatarInitial: avatarInitial.trim() || name.charAt(0).toUpperCase(),
+      avatarUrl: avatarUrl ? avatarUrl.trim() : undefined,
       skills,
       achievements,
       portfolioItems,
@@ -233,17 +288,134 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           {/* TAB 1: BASIC INFO & AVATAR */}
           {activeTab === 'basic' && (
             <div className="space-y-4 animate-in fade-in duration-100">
-              {/* Avatar customize */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row items-center gap-4">
-                <div className={`w-16 h-16 rounded-2xl ${avatarColor} text-white flex items-center justify-center font-bold text-2xl shadow-sm shrink-0`}>
-                  {avatarInitial || 'U'}
+              {/* Avatar Studio */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
+                
+                {/* Live Preview + Upload Button */}
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <div className="relative group shrink-0">
+                    <UserAvatar
+                      name={name || user.name}
+                      avatarUrl={avatarUrl}
+                      avatarInitial={avatarInitial}
+                      avatarColor={avatarColor}
+                      size="xl"
+                      shape="rounded"
+                      className="shadow-md ring-4 ring-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 bg-slate-900/50 text-white rounded-3xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition cursor-pointer"
+                      title="Nhấn để đổi ảnh cá nhân"
+                    >
+                      <Camera className="w-5 h-5 mb-0.5" />
+                      <span className="text-[10px] font-semibold">Đổi ảnh</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2 text-center sm:text-left flex-1">
+                    <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Tải ảnh từ máy / điện thoại</span>
+                      </button>
+
+                      {avatarUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAvatarUrl('');
+                            showToast('Đã gỡ ảnh cá nhân, trở về chữ cái Monogram.', 'info');
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Gỡ ảnh cá nhân</span>
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Hỗ trợ tệp JPG, PNG, WebP (Tự động canh vuông và nén siêu nhẹ cho web).
+                    </p>
+                  </div>
                 </div>
 
-                <div className="space-y-2 text-left flex-1">
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                      Chọn màu đại diện Avatar:
+                {/* Hoặc dán URL ảnh trực tiếp */}
+                <div className="pt-3 border-t border-slate-200/70">
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Hoặc dán đường dẫn ảnh trực tuyến (URL):
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={avatarUrl.startsWith('data:') ? '' : avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      placeholder="https://example.com/anh-the-sinh-vien.jpg"
+                      className="flex-1 p-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-teal-500 bg-white"
+                    />
+                    {avatarUrl && !avatarUrl.startsWith('data:') && (
+                      <button
+                        type="button"
+                        onClick={() => setAvatarUrl('')}
+                        className="px-2.5 py-1 text-slate-400 hover:text-slate-600 text-xs font-medium"
+                      >
+                        Xóa
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mẫu ảnh sinh viên demo chọn nhanh 1-chạm */}
+                <div className="pt-3 border-t border-slate-200/70">
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1.5">
+                    Hoặc chọn nhanh mẫu ảnh sinh viên demo:
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {PRESET_AVATARS.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setAvatarUrl(preset.url);
+                          showToast(`Đã chọn ảnh demo: ${preset.label}`, 'info');
+                        }}
+                        className={`flex items-center gap-2 p-1.5 rounded-xl border transition text-[11px] font-medium text-left ${
+                          avatarUrl === preset.url
+                            ? 'bg-teal-50 border-teal-500 text-teal-900 ring-2 ring-teal-500/20'
+                            : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.label}
+                          className="w-6 h-6 rounded-lg object-cover shrink-0"
+                        />
+                        <span className="truncate">{preset.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Monogram Fallback Settings */}
+                <div className="pt-3 border-t border-slate-200/70 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-semibold text-slate-700">
+                      Màu nền & Chữ cái đại diện (dự phòng khi không có ảnh):
                     </label>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex flex-wrap gap-2">
                       {AVATAR_COLORS.map((c) => (
                         <button
@@ -256,19 +428,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         />
                       ))}
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 pt-1">
-                    <label className="text-[11px] font-semibold text-slate-700">Ký tự viết tắt:</label>
-                    <input
-                      type="text"
-                      maxLength={2}
-                      value={avatarInitial}
-                      onChange={(e) => setAvatarInitial(e.target.value.toUpperCase())}
-                      className="w-12 text-center p-1 rounded-lg border border-slate-200 text-xs font-bold uppercase focus:outline-none focus:border-teal-500"
-                    />
+                    <div className="flex items-center gap-2">
+                      <label className="text-[11px] font-medium text-slate-600">Ký tự viết tắt:</label>
+                      <input
+                        type="text"
+                        maxLength={2}
+                        value={avatarInitial}
+                        onChange={(e) => setAvatarInitial(e.target.value.toUpperCase())}
+                        className="w-12 text-center p-1 rounded-lg border border-slate-200 text-xs font-bold uppercase focus:outline-none focus:border-teal-500 bg-white"
+                      />
+                    </div>
                   </div>
                 </div>
+
               </div>
 
               {/* Name & Class */}
