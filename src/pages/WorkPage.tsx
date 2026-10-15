@@ -6,10 +6,16 @@ import {
 } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
 import { EscrowPaymentModal } from '../components/EscrowPaymentModal';
+import { ApprovalModal } from '../components/ApprovalModal';
+import { DisputeModal } from '../components/DisputeModal';
+import { showToast } from '../components/Toast';
 
 export const WorkPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [deliveryUrls, setDeliveryUrls] = useState<string[]>(['']);
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [revisionReason, setRevisionReason] = useState('');
@@ -69,36 +75,45 @@ export const WorkPage: React.FC = () => {
     e.preventDefault();
     const validUrls = deliveryUrls.filter(u => u.trim().startsWith('http'));
     if (validUrls.length === 0) {
-      alert('Vui lòng nhập ít nhất 1 liên kết hợp lệ (bắt đầu bằng https://)');
+      showToast('Vui lòng nhập ít nhất 1 liên kết hợp lệ (bắt đầu bằng https://)', 'error');
       return;
     }
     const res = mockStore.submitDelivery(contract.id, validUrls, deliveryNotes);
     if (res.success) {
-      alert(res.message);
-      window.location.reload();
+      showToast(res.message, 'success');
+      setTimeout(() => window.location.reload(), 400);
+    } else {
+      showToast(res.message, 'error');
     }
   };
 
   const handleRequestRevision = () => {
     if (!revisionReason.trim()) {
-      alert('Vui lòng nêu rõ các điểm bạn cần bạn sinh viên chỉnh sửa lại.');
+      showToast('Vui lòng nêu rõ các điểm bạn cần bạn sinh viên chỉnh sửa lại.', 'error');
       return;
     }
     const res = mockStore.requestRevision(contract.id, revisionReason);
     if (res.success) {
-      alert('Đã gửi yêu cầu chỉnh sửa đến bạn sinh viên.');
+      showToast('Đã gửi yêu cầu chỉnh sửa đến bạn sinh viên.', 'info');
       setShowRevisionInput(false);
-      window.location.reload();
+      setTimeout(() => window.location.reload(), 400);
+    } else {
+      showToast(res.message, 'error');
     }
   };
 
-  const handleCompleteContract = () => {
-    if (window.confirm('Bạn có hài lòng và muốn gửi thù lao đến bạn sinh viên không?')) {
-      const res = mockStore.completeContract(contract.id);
-      if (res.success) {
-        alert(res.message);
-        window.location.reload();
-      }
+  const handleConfirmApproval = (stars: number, comment: string) => {
+    setIsApproving(true);
+    const completeRes = mockStore.completeContract(contract.id);
+    if (completeRes.success) {
+      mockStore.addReview(contract.id, stars, comment);
+      showToast(`Đã duyệt bài và giải phóng ${contract.priceSnapshot.toLocaleString('vi-VN')}đ thù lao cho bạn sinh viên!`, 'success');
+      setShowApprovalModal(false);
+      setIsApproving(false);
+      setTimeout(() => window.location.reload(), 500);
+    } else {
+      showToast(completeRes.message, 'error');
+      setIsApproving(false);
     }
   };
 
@@ -115,18 +130,20 @@ export const WorkPage: React.FC = () => {
     const res = mockStore.addReview(contract.id, ratingStars, ratingComment);
     if (res.success) {
       setHasRated(true);
-      alert(res.message);
+      showToast(res.message, 'success');
+    } else {
+      showToast(res.message, 'error');
     }
   };
 
-  const handleOpenDispute = () => {
-    const reason = window.prompt('Vui lòng cho biết vấn đề bạn gặp phải để UNISTY hỗ trợ:');
-    if (reason) {
-      const res = mockStore.openDispute(contract.id, reason);
-      if (res.success) {
-        alert('Đã gửi yêu cầu hỗ trợ. Ban Quản trị UNISTY sẽ liên hệ với bạn sớm.');
-        window.location.reload();
-      }
+  const handleConfirmDispute = (reason: string) => {
+    const res = mockStore.openDispute(contract.id, reason);
+    if (res.success) {
+      showToast('Đã gửi yêu cầu hòa giải đến Ban Quản trị UNISTY!', 'info');
+      setShowDisputeModal(false);
+      setTimeout(() => window.location.reload(), 500);
+    } else {
+      showToast(res.message, 'error');
     }
   };
 
@@ -155,7 +172,10 @@ export const WorkPage: React.FC = () => {
           {showActionMenu && (
             <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 text-xs z-20">
               <button
-                onClick={handleOpenDispute}
+                onClick={() => {
+                  setShowActionMenu(false);
+                  setShowDisputeModal(true);
+                }}
                 className="w-full text-left px-3.5 py-2 text-rose-600 hover:bg-rose-50 font-medium transition"
               >
                 Cần UNISTY hỗ trợ việc này
@@ -429,7 +449,7 @@ export const WorkPage: React.FC = () => {
                 {isRequester && (
                   <div className="space-y-2 pt-2">
                     <button
-                      onClick={handleCompleteContract}
+                      onClick={() => setShowApprovalModal(true)}
                       className="w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-md transition flex items-center justify-center gap-1.5"
                     >
                       <CheckCircle2 className="w-4 h-4" />
@@ -545,6 +565,25 @@ export const WorkPage: React.FC = () => {
             setShowPaymentModal(false);
             window.location.reload();
           }}
+        />
+      )}
+
+      {/* Approval & Rating Modal */}
+      {showApprovalModal && (
+        <ApprovalModal
+          contract={contract}
+          isProcessing={isApproving}
+          onClose={() => setShowApprovalModal(false)}
+          onConfirm={handleConfirmApproval}
+        />
+      )}
+
+      {/* Dispute Modal */}
+      {showDisputeModal && (
+        <DisputeModal
+          contract={contract}
+          onClose={() => setShowDisputeModal(false)}
+          onSubmit={handleConfirmDispute}
         />
       )}
 

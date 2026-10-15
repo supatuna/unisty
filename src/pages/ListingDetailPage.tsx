@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, Clock, Calendar, AlertCircle, ExternalLink, CheckCircle2, UserCheck } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
+import { showToast } from '../components/Toast';
 
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,14 +33,12 @@ export const ListingDetailPage: React.FC = () => {
 
   // Người thuê bấm chấp nhận 1 bạn sinh viên ứng tuyển
   const handleAcceptProposal = (proposalId: string) => {
-    if (window.confirm('Bạn có chắc muốn chọn bạn sinh viên này và bắt đầu công việc?')) {
-      const res = mockStore.acceptProposal(proposalId);
-      if (res.success) {
-        alert(res.message);
-        navigate(`/work/${res.contractId}`);
-      } else {
-        alert(res.message);
-      }
+    const res = mockStore.acceptProposal(proposalId);
+    if (res.success) {
+      showToast(res.message, 'success');
+      setTimeout(() => navigate(`/work/${res.contractId}`), 400);
+    } else {
+      showToast(res.message, 'error');
     }
   };
 
@@ -52,18 +51,20 @@ export const ListingDetailPage: React.FC = () => {
       // Đặt làm dịch vụ
       setTimeout(() => {
         setIsSubmitting(false);
-        alert('Đã gửi yêu cầu đặt dịch vụ thành công! Hệ thống chuyển bạn đến trang quản lý dự án.');
+        showToast('Đã gửi yêu cầu đặt dịch vụ thành công! Hệ thống chuyển bạn đến phòng làm việc.', 'success');
         navigate('/work/con-101');
-      }, 500);
+      }, 400);
     } else {
       // Sinh viên DUE nộp đề xuất cho bài Nhu cầu
       const priceToSubmit = proposalPrice > 0 ? proposalPrice : listing.price;
       const res = mockStore.submitProposal(listing.id, proposalScope, priceToSubmit);
       setIsSubmitting(false);
       if (res.success) {
-        alert(res.message);
+        showToast(res.message, 'success');
         setShowProposalForm(false);
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 400);
+      } else {
+        showToast(res.message, 'error');
       }
     }
   };

@@ -1,5 +1,5 @@
 import { User, Listing, Contract, Review, Message, Wallet, LedgerEntry, Delivery, RevisionRequest, Dispute, Proposal } from '../types';
-import { INITIAL_USERS, INITIAL_LISTINGS, INITIAL_CONTRACTS, INITIAL_REVIEWS } from './mockFixtures';
+import { INITIAL_USERS, INITIAL_LISTINGS, INITIAL_CONTRACTS, INITIAL_REVIEWS, INITIAL_DISPUTES } from './mockFixtures';
 
 const STORAGE_KEY = 'unisty.demo.v1';
 
@@ -107,7 +107,7 @@ function loadInitialData(): StorageData {
     messages,
     deliveries,
     revisions: [],
-    disputes: [],
+    disputes: INITIAL_DISPUTES,
     wallets,
     ledger: [],
     currentUserId: 'user-due-thao',
@@ -439,6 +439,56 @@ class MockStore {
 
     this.write(this.data);
     return { success: true, message: 'Đã gửi yêu cầu hỗ trợ đến Ban Quản trị.' };
+  }
+
+  public getDisputes(): Dispute[] {
+    return this.data.disputes || [];
+  }
+
+  public resolveDispute(
+    disputeId: string, 
+    resolution: 'refund_all' | 'release_all', 
+    reason: string
+  ): { success: boolean; message: string } {
+    const dispute = (this.data.disputes || []).find(d => d.id === disputeId);
+    if (!dispute) {
+      return { success: false, message: 'Không tìm thấy khiếu nại này.' };
+    }
+
+    const contract = this.getContractById(dispute.contractId);
+    if (!contract) {
+      return { success: false, message: 'Không tìm thấy hợp đồng liên quan.' };
+    }
+
+    const requesterWallet = this.getWallet(contract.requesterId);
+    const providerWallet = this.getWallet(contract.providerId);
+
+    if (resolution === 'refund_all') {
+      // Hoàn tiền 100% cho người thuê
+      requesterWallet.held -= contract.priceSnapshot;
+      requesterWallet.available += contract.priceSnapshot;
+      contract.state = 'cancelled';
+      contract.escrowStatus = 'refunded';
+    } else {
+      // Giải ngân thù lao cho sinh viên
+      requesterWallet.held -= contract.priceSnapshot;
+      providerWallet.available += contract.priceSnapshot;
+      contract.state = 'completed';
+      contract.escrowStatus = 'released';
+    }
+
+    dispute.resolution = resolution;
+    dispute.resolutionReason = reason;
+    dispute.resolvedBy = 'admin';
+    contract.updatedAt = new Date().toISOString();
+
+    this.write(this.data);
+    return { 
+      success: true, 
+      message: resolution === 'refund_all' 
+        ? 'Đã hoàn 100% tiền tạm giữ lại vào ví của người thuê!' 
+        : 'Đã giải phóng thù lao vào ví của bạn sinh viên!' 
+    };
   }
 }
 

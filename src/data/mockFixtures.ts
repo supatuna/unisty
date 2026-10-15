@@ -377,6 +377,35 @@ export const INITIAL_CONTRACTS: Contract[] = [
     escrowStatus: 'released',
     createdAt: '2026-10-10T08:00:00Z',
     updatedAt: '2026-10-12T10:00:00Z',
+  },
+  {
+    id: 'con-104',
+    proposalId: 'prop-104',
+    listingId: 'list-5',
+    requesterId: 'user-requester-minh',
+    requesterName: 'Anh Tuấn (The Lab Cafe)',
+    providerId: 'user-due-ha',
+    providerName: 'Hà Linh',
+    isProviderDue: true,
+    titleSnapshot: 'Thiết kế bộ nhận diện & Voucher giảm giá khai trương',
+    scopeSnapshot: 'Thiết kế 1 voucher khổ 9x5.4cm và 1 banner facebook. Đã quá hạn cam kết 3 ngày.',
+    priceSnapshot: 350000,
+    dueAtSnapshot: '2026-10-12T18:00:00Z',
+    state: 'disputed', // ĐANG TRANH CHẤP ĐỂ DEMO BAN QUẢN TRỊ
+    escrowStatus: 'held',
+    createdAt: '2026-10-10T14:00:00Z',
+    updatedAt: '2026-10-14T10:00:00Z',
+  }
+];
+
+export const INITIAL_DISPUTES = [
+  {
+    id: 'disp-1',
+    contractId: 'con-104',
+    openedBy: 'user-requester-minh',
+    reason: 'Đã trễ hẹn bàn giao 3 ngày và người làm không phản hồi tin nhắn trong phòng làm việc.',
+    previousState: 'in_progress' as const,
+    createdAt: '2026-10-14T10:00:00Z',
   }
 ];
 

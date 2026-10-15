@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
 import { ListingKind, ListingCategory } from '../types';
+import { showToast } from '../components/Toast';
 
 export const NewListingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export const NewListingPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (price < 1 || price > 1000000) {
-      alert('Chi phí phải từ 1đ đến 1.000.000đ.');
+      showToast('Chi phí phải từ 1đ đến 1.000.000đ.', 'error');
       return;
     }
 
@@ -38,8 +39,8 @@ export const NewListingPage: React.FC = () => {
       dueAt: kind === 'need' ? dueAt : undefined,
     });
 
-    alert('Đã đăng tin thành công!');
-    navigate('/marketplace');
+    showToast('Đã đăng tin mới thành công lên sàn UNISTY!', 'success');
+    setTimeout(() => navigate('/marketplace'), 400);
   };
 
   return (

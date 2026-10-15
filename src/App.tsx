@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { PresenterToolbar } from './components/PresenterToolbar';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { ToastContainer } from './components/Toast';
 
 import { HomePage } from './pages/HomePage';
 import { MarketplacePage } from './pages/MarketplacePage';
@@ -14,10 +15,14 @@ import { DashboardPage } from './pages/DashboardPage';
 import { AdminPage } from './pages/AdminPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AboutPage } from './pages/AboutPage';
+import { SafetyPage } from './pages/SafetyPage';
 
 export const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-teal-600 selection:text-white">
+      {/* Toast Notification Container */}
+      <ToastContainer />
+
       {/* Top Navbar */}
       <Navbar />
 
@@ -31,6 +36,7 @@ export const App: React.FC = () => {
           <Route path="/profiles/:id" element={<ProfilePage />} />
           <Route path="/work/:id" element={<WorkPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/safety" element={<SafetyPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

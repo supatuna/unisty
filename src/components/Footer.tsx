@@ -20,6 +20,7 @@ export const Footer: React.FC = () => {
           <Link to="/marketplace" className="hover:text-slate-900 transition">Sàn việc làm</Link>
           <Link to="/listings/new" className="hover:text-slate-900 transition">Đăng tin</Link>
           <Link to="/dashboard" className="hover:text-slate-900 transition">Dự án của tôi</Link>
+          <Link to="/safety" className="hover:text-slate-900 transition">Tiêu chuẩn an toàn</Link>
           <Link to="/about" className="text-teal-700 hover:text-teal-800 font-semibold transition">
             Về đề tài (Nhóm 50K32.3)
           </Link>
