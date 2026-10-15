@@ -1,0 +1,18 @@
+{
+  "name": "UNISTY — Nền tảng Kỹ năng Sinh viên DUE",
+  "short_name": "UNISTY",
+  "description": "Bệ phóng việc làm tự do và hồ sơ năng lực dành riêng cho sinh viên Đại học Kinh tế – ĐH Đà Nẵng",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0F172A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
