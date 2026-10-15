@@ -177,6 +177,35 @@ class MockStore {
     return this.data.users.find(u => u.id === id);
   }
 
+  public updateUser(userId: string, updates: Partial<User>): User | undefined {
+    const userIndex = this.data.users.findIndex(u => u.id === userId);
+    if (userIndex === -1) return undefined;
+
+    this.data.users[userIndex] = {
+      ...this.data.users[userIndex],
+      ...updates,
+    };
+
+    // Đồng bộ thông tin tên và avatar vào các tin đăng của người dùng
+    if (updates.name || updates.avatarInitial || updates.avatarColor) {
+      const updatedUser = this.data.users[userIndex];
+      this.data.listings = this.data.listings.map(l => {
+        if (l.ownerId === userId) {
+          return {
+            ...l,
+            ownerName: updatedUser.name,
+            ownerAvatar: updatedUser.avatarInitial,
+            ownerAvatarColor: updatedUser.avatarColor,
+          };
+        }
+        return l;
+      });
+    }
+
+    this.write(this.data);
+    return this.data.users[userIndex];
+  }
+
   public getListings(): Listing[] {
     return this.data.listings.filter(l => !l.isHidden);
   }

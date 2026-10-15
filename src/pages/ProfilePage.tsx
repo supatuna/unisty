@@ -1,17 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   ShieldCheck, Award, GraduationCap, CheckCircle2, 
-  ExternalLink, Star, Briefcase, Clock, ArrowLeft, PlusCircle
+  ExternalLink, Star, Briefcase, Clock, ArrowLeft, PlusCircle,
+  Edit3, Sparkles, Plus, Settings
 } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
 import { ListingCard } from '../components/ListingCard';
+import { EditProfileModal } from '../components/EditProfileModal';
 
 export const ProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const user = mockStore.getUserById(id || 'user-due-thao');
+  const [currentUser, setCurrentUser] = useState(() => mockStore.getCurrentUser());
+  const targetId = id || currentUser.id;
+  const [user, setUser] = useState(() => mockStore.getUserById(targetId));
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTab, setEditTab] = useState<'basic' | 'skills' | 'achievements' | 'portfolio'>('basic');
+
+  useEffect(() => {
+    setUser(mockStore.getUserById(targetId));
+    setCurrentUser(mockStore.getCurrentUser());
+  }, [targetId]);
+
   const allListings = mockStore.getListings();
   const userListings = allListings.filter(l => l.ownerId === (user?.id || ''));
+  const isOwner = currentUser?.id === user?.id;
+
+  const openEditModal = (tab: 'basic' | 'skills' | 'achievements' | 'portfolio' = 'basic') => {
+    setEditTab(tab);
+    setShowEditModal(true);
+  };
 
   if (!user) {
     return (
@@ -69,16 +87,29 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick CTA */}
-          {user.role === 'due' && (
-            <a
-              href="#services"
-              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-sm transition shrink-0"
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              Xem dịch vụ của bạn này
-            </a>
-          )}
+          {/* Quick CTA Actions */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {isOwner && (
+              <button
+                onClick={() => openEditModal('basic')}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition hover:shadow shrink-0 cursor-pointer"
+                id="btn-edit-profile"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-teal-400" />
+                <span>Chỉnh sửa hồ sơ</span>
+              </button>
+            )}
+
+            {user.role === 'due' && (
+              <a
+                href="#services"
+                className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-sm transition shrink-0"
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                <span>Xem dịch vụ của bạn này</span>
+              </a>
+            )}
+          </div>
         </div>
 
         {/* Bio summary */}
@@ -127,7 +158,18 @@ export const ProfilePage: React.FC = () => {
                 <Briefcase className="w-4 h-4 text-teal-600" />
                 <h2 className="font-bold text-base text-slate-900">Sản phẩm mẫu thực tế (Portfolio)</h2>
               </div>
-              <span className="text-xs text-slate-400">Minh chứng năng lực</span>
+              <div className="flex items-center gap-2">
+                {isOwner && (
+                  <button
+                    onClick={() => openEditModal('portfolio')}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100/80 px-2.5 py-1 rounded-lg border border-teal-200/80 transition"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Thêm minh chứng</span>
+                  </button>
+                )}
+                <span className="text-xs text-slate-400 hidden sm:inline">Minh chứng năng lực</span>
+              </div>
             </div>
 
             {user.portfolioItems && user.portfolioItems.length > 0 ? (
@@ -159,7 +201,18 @@ export const ProfilePage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 py-3">Bạn sinh viên chưa cập nhật sản phẩm mẫu.</p>
+              <div className="text-center py-6 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                <p className="text-xs text-slate-500 mb-2">Chưa có sản phẩm mẫu nào trong hồ sơ.</p>
+                {isOwner && (
+                  <button
+                    onClick={() => openEditModal('portfolio')}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-800 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs hover:bg-slate-50 transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Thêm sản phẩm mẫu đầu tiên</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
@@ -212,9 +265,19 @@ export const ProfilePage: React.FC = () => {
           
           {/* ACADEMIC ACHIEVEMENTS (Thành tựu học tập & NCKH - Điểm nhấn LinkedIn) */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-              <GraduationCap className="w-4 h-4 text-teal-600" />
-              <h3 className="font-bold text-sm text-slate-900">Thành tựu học thuật</h3>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-teal-600" />
+                <h3 className="font-bold text-sm text-slate-900">Thành tựu học thuật & NCKH</h3>
+              </div>
+              {isOwner && (
+                <button
+                  onClick={() => openEditModal('achievements')}
+                  className="text-[11px] font-semibold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100/70 px-2 py-0.5 rounded-md transition"
+                >
+                  + Thêm
+                </button>
+              )}
             </div>
 
             {user.achievements && user.achievements.length > 0 ? (
@@ -232,21 +295,45 @@ export const ProfilePage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500">Chưa có thành tích bổ sung.</p>
+              <div className="text-center py-4 text-slate-500 text-xs">
+                <p>Chưa có thành tích hoặc chứng chỉ bổ sung.</p>
+                {isOwner && (
+                  <button
+                    onClick={() => openEditModal('achievements')}
+                    className="mt-2 text-xs font-medium text-teal-700 underline"
+                  >
+                    Thêm giải thưởng / chứng chỉ
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
           {/* SKILLS MATRIX (Kỹ năng thực tế) */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-            <h3 className="font-bold text-sm text-slate-900 pb-2 border-b border-slate-100">
-              Kỹ năng thực chiến
-            </h3>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-bold text-sm text-slate-900">
+                Kỹ năng thực chiến
+              </h3>
+              {isOwner && (
+                <button
+                  onClick={() => openEditModal('skills')}
+                  className="text-[11px] font-semibold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100/70 px-2 py-0.5 rounded-md transition"
+                >
+                  Chỉnh sửa
+                </button>
+              )}
+            </div>
             <div className="flex flex-wrap gap-1.5">
-              {user.skills.map((skill, idx) => (
-                <span key={idx} className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
-                  {skill}
-                </span>
-              ))}
+              {user.skills && user.skills.length > 0 ? (
+                user.skills.map((skill, idx) => (
+                  <span key={idx} className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
+                    {skill}
+                  </span>
+                ))
+              ) : (
+                <p className="text-xs text-slate-500 py-1">Chưa cập nhật kỹ năng.</p>
+              )}
             </div>
           </div>
 
@@ -265,6 +352,21 @@ export const ProfilePage: React.FC = () => {
 
       </div>
 
+      {/* Edit Profile Modal */}
+      {showEditModal && user && (
+        <EditProfileModal
+          user={user}
+          initialTab={editTab}
+          onClose={() => setShowEditModal(false)}
+          onSaved={() => {
+            const updated = mockStore.getUserById(targetId);
+            if (updated) setUser({ ...updated });
+            setCurrentUser(mockStore.getCurrentUser());
+          }}
+        />
+      )}
+
     </div>
   );
 };
+
