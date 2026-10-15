@@ -25,6 +25,7 @@ export const ProfilePage: React.FC = () => {
 
   const allListings = mockStore.getListings();
   const userListings = allListings.filter(l => l.ownerId === (user?.id || ''));
+  const userReviews = user ? mockStore.getReviewsForUser(user.id) : [];
   const isOwner = currentUser?.id === user?.id;
 
   const openEditModal = (tab: 'basic' | 'skills' | 'achievements' | 'portfolio' = 'basic') => {
@@ -242,27 +243,47 @@ export const ProfilePage: React.FC = () => {
           {/* 4. VERIFIED CLIENT REVIEWS (Đánh giá xác thực) */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h2 className="font-bold text-base text-slate-900">Đánh giá từ người thuê</h2>
+              <h2 className="font-bold text-base text-slate-900">
+                Đánh giá từ người thuê ({userReviews.length})
+              </h2>
               <span className="text-xs text-slate-400">Đã qua nghiệm thu</span>
             </div>
 
-            <div className="space-y-3">
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-bold">
-                      A
+            {userReviews.length > 0 ? (
+              <div className="space-y-3">
+                {userReviews.map((rev) => {
+                  const reviewer = mockStore.getUserById(rev.reviewerId);
+                  return (
+                    <div key={rev.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <UserAvatar
+                            name={rev.reviewerName}
+                            avatarUrl={reviewer?.avatarUrl}
+                            avatarInitial={reviewer?.avatarInitial || rev.reviewerName.charAt(0)}
+                            avatarColor={reviewer?.avatarColor || 'bg-amber-600'}
+                            size="xs"
+                            shape="circle"
+                          />
+                          <span className="font-bold text-xs text-slate-800">{rev.reviewerName}</span>
+                        </div>
+                        <div className="flex text-amber-400 text-xs tracking-wider">
+                          {'★'.repeat(rev.stars)}{'☆'.repeat(Math.max(0, 5 - rev.stars))}
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed italic">
+                        "{rev.comment}"
+                      </p>
+                      <span className="text-[10px] text-slate-400 block">
+                        Đã nghiệm thu • {new Date(rev.createdAt).toLocaleDateString('vi-VN')}
+                      </span>
                     </div>
-                    <span className="font-bold text-xs text-slate-800">Anh Tuấn (The Lab Cafe)</span>
-                  </div>
-                  <div className="flex text-amber-400 text-xs">★★★★★</div>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed italic">
-                  "Làm việc rất đúng hạn và có trách nhiệm! Chất lượng sản phẩm vượt ngoài mong đợi của quán. Sẽ tiếp tục hợp tác lâu dài."
-                </p>
-                <span className="text-[10px] text-slate-400 block">Dự án thiết kế • Tháng 10/2026</span>
+                  );
+                })}
               </div>
-            </div>
+            ) : (
+              <p className="text-xs text-slate-500 py-3">Bạn sinh viên chưa có đánh giá nào từ các dự án trước.</p>
+            )}
           </div>
 
         </div>

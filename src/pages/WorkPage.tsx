@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, ShieldCheck, CheckCircle2, AlertTriangle, 
@@ -9,6 +9,7 @@ import { EscrowPaymentModal } from '../components/EscrowPaymentModal';
 import { ApprovalModal } from '../components/ApprovalModal';
 import { DisputeModal } from '../components/DisputeModal';
 import { showToast } from '../components/Toast';
+import { UserAvatar } from '../components/UserAvatar';
 
 export const WorkPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,8 +27,22 @@ export const WorkPage: React.FC = () => {
   const [hasRated, setHasRated] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
 
-  const contract = mockStore.getContractById(id || 'con-101');
   const currentUser = mockStore.getCurrentUser();
+  const userContracts = mockStore.getContractsForUser(currentUser.id);
+  const targetId = id || (userContracts.length > 0 ? userContracts[0].id : 'con-100');
+
+  const [contract, setContract] = useState(() => mockStore.getContractById(targetId));
+  const [deliveries, setDeliveries] = useState(() => contract ? mockStore.getDeliveries(contract.id) : []);
+  const [messages, setMessages] = useState(() => contract ? mockStore.getMessages(contract.id) : []);
+
+  useEffect(() => {
+    const updated = mockStore.getContractById(targetId);
+    setContract(updated);
+    if (updated) {
+      setDeliveries(mockStore.getDeliveries(updated.id));
+      setMessages(mockStore.getMessages(updated.id));
+    }
+  }, [targetId, id]);
 
   if (!contract) {
     return (
@@ -42,8 +57,6 @@ export const WorkPage: React.FC = () => {
 
   const isRequester = currentUser.id === contract.requesterId;
   const isProvider = currentUser.id === contract.providerId;
-  const deliveries = mockStore.getDeliveries(contract.id);
-  const messages = mockStore.getMessages(contract.id);
 
   // Stepper Calculation
   const getStepIndex = () => {
@@ -81,7 +94,11 @@ export const WorkPage: React.FC = () => {
     const res = mockStore.submitDelivery(contract.id, validUrls, deliveryNotes);
     if (res.success) {
       showToast(res.message, 'success');
-      setTimeout(() => window.location.reload(), 400);
+      const updated = mockStore.getContractById(contract.id);
+      if (updated) setContract({ ...updated });
+      setDeliveries(mockStore.getDeliveries(contract.id));
+      setDeliveryNotes('');
+      setDeliveryUrls(['']);
     } else {
       showToast(res.message, 'error');
     }
@@ -96,7 +113,9 @@ export const WorkPage: React.FC = () => {
     if (res.success) {
       showToast('Đã gửi yêu cầu chỉnh sửa đến bạn sinh viên.', 'info');
       setShowRevisionInput(false);
-      setTimeout(() => window.location.reload(), 400);
+      setRevisionReason('');
+      const updated = mockStore.getContractById(contract.id);
+      if (updated) setContract({ ...updated });
     } else {
       showToast(res.message, 'error');
     }
@@ -110,7 +129,8 @@ export const WorkPage: React.FC = () => {
       showToast(`Đã duyệt bài và giải phóng ${contract.priceSnapshot.toLocaleString('vi-VN')}đ thù lao cho bạn sinh viên!`, 'success');
       setShowApprovalModal(false);
       setIsApproving(false);
-      setTimeout(() => window.location.reload(), 500);
+      const updated = mockStore.getContractById(contract.id);
+      if (updated) setContract({ ...updated });
     } else {
       showToast(completeRes.message, 'error');
       setIsApproving(false);
@@ -122,7 +142,7 @@ export const WorkPage: React.FC = () => {
     if (!chatInput.trim()) return;
     mockStore.sendMessage(contract.id, chatInput);
     setChatInput('');
-    window.location.reload();
+    setMessages(mockStore.getMessages(contract.id));
   };
 
   const handleSendReview = (e: React.FormEvent) => {
@@ -141,7 +161,8 @@ export const WorkPage: React.FC = () => {
     if (res.success) {
       showToast('Đã gửi yêu cầu hòa giải đến Ban Quản trị UNISTY!', 'info');
       setShowDisputeModal(false);
-      setTimeout(() => window.location.reload(), 500);
+      const updated = mockStore.getContractById(contract.id);
+      if (updated) setContract({ ...updated });
     } else {
       showToast(res.message, 'error');
     }
@@ -184,6 +205,43 @@ export const WorkPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Observer / Multi-account helper banner */}
+      {!isRequester && !isProvider && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+            <div>
+              <p className="font-bold text-amber-900">
+                Chế độ quan sát (Bạn đang đăng nhập: {currentUser.name})
+              </p>
+              <p className="text-[11px] text-amber-800/90 mt-0.5">
+                Dự án này là thỏa thuận giữa <strong>{contract.requesterName}</strong> (Người thuê) và <strong>{contract.providerName}</strong> (Người làm). Chuyển tài khoản bên dưới để thực hiện các thao tác:
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                mockStore.setCurrentUserId(contract.requesterId);
+                window.location.reload();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-amber-200 hover:bg-amber-300 font-semibold text-[11px] text-amber-950 transition cursor-pointer"
+            >
+              Đổi sang {contract.requesterName}
+            </button>
+            <button
+              onClick={() => {
+                mockStore.setCurrentUserId(contract.providerId);
+                window.location.reload();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 font-semibold text-[11px] text-white transition cursor-pointer"
+            >
+              Đổi sang {contract.providerName}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Work Header */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
@@ -563,7 +621,8 @@ export const WorkPage: React.FC = () => {
           onClose={() => setShowPaymentModal(false)}
           onSuccess={() => {
             setShowPaymentModal(false);
-            window.location.reload();
+            const updated = mockStore.getContractById(contract.id);
+            if (updated) setContract({ ...updated });
           }}
         />
       )}

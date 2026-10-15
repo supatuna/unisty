@@ -14,6 +14,13 @@ export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onS
     window.location.reload();
   };
 
+  const handleScenarioNavigate = (url: string, requiredUserId?: string) => {
+    if (requiredUserId && currentUser.id !== requiredUserId) {
+      mockStore.setCurrentUserId(requiredUserId);
+    }
+    window.location.href = url;
+  };
+
   const handleResetData = () => {
     if (window.confirm('Bạn có chắc muốn khôi phục toàn bộ dữ liệu mẫu ban đầu không?')) {
       mockStore.resetAll();
@@ -67,9 +74,10 @@ export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onS
               </span>
 
               {/* Scenario 1 */}
-              <a
-                href="/work/con-100"
-                className="block p-2.5 rounded-xl bg-teal-50/80 hover:bg-teal-100/70 border border-teal-200/80 transition group"
+              <button
+                type="button"
+                onClick={() => handleScenarioNavigate('/work/con-100', 'user-due-thao')}
+                className="w-full text-left p-2.5 rounded-xl bg-teal-50/80 hover:bg-teal-100/70 border border-teal-200/80 transition group cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-teal-950 flex items-center gap-1.5">
@@ -79,14 +87,15 @@ export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onS
                   <ExternalLink className="w-3 h-3 text-teal-600 opacity-60 group-hover:opacity-100" />
                 </div>
                 <p className="text-[11px] text-teal-800 mt-1 leading-snug">
-                  Hợp đồng #con-100 đang chờ thanh toán 200k qua VietQR Sandbox / Ví.
+                  Chuyển sang Thảo Nguyễn • Ký quỹ #con-100 qua VietQR / Ví.
                 </p>
-              </a>
+              </button>
 
               {/* Scenario 2 */}
-              <a
-                href="/work/con-102"
-                className="block p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/50 border border-slate-200/90 transition group"
+              <button
+                type="button"
+                onClick={() => handleScenarioNavigate('/work/con-102', 'user-requester-minh')}
+                className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/50 border border-slate-200/90 transition group cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
@@ -96,14 +105,15 @@ export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onS
                   <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-slate-700" />
                 </div>
                 <p className="text-[11px] text-slate-600 mt-1 leading-snug">
-                  #con-102 đã nộp video CapCut. Bấm duyệt bài, chấm 5 sao & giải phóng thù lao.
+                  Chuyển sang Anh Tuấn • Duyệt video CapCut #con-102, chấm 5★ & giải phóng tiền.
                 </p>
-              </a>
+              </button>
 
               {/* Scenario 3 */}
-              <a
-                href="/listings/list-5"
-                className="block p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/50 border border-slate-200/90 transition group"
+              <button
+                type="button"
+                onClick={() => handleScenarioNavigate('/listings/list-5', 'user-requester-minh')}
+                className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/50 border border-slate-200/90 transition group cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
@@ -113,14 +123,15 @@ export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onS
                   <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-slate-700" />
                 </div>
                 <p className="text-[11px] text-slate-600 mt-1 leading-snug">
-                  Bài tuyển menu The Lab Cafe có 2 đề xuất của Thảo và Linh. Bấm chọn bạn phù hợp.
+                  Chuyển sang Anh Tuấn • Duyệt 2 ứng viên cho tin tuyển thiết kế menu.
                 </p>
-              </a>
+              </button>
 
               {/* Scenario 4 */}
-              <a
-                href="/profiles/user-due-thao"
-                className="block p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/50 border border-slate-200/90 transition group"
+              <button
+                type="button"
+                onClick={() => handleScenarioNavigate('/profiles/user-due-thao', 'user-due-thao')}
+                className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/50 border border-slate-200/90 transition group cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
@@ -130,14 +141,15 @@ export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onS
                   <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-slate-700" />
                 </div>
                 <p className="text-[11px] text-slate-600 mt-1 leading-snug">
-                  Profile Thảo Nguyễn: Huy hiệu DUE, NCKH 2025, IELTS 7.5, sản phẩm mẫu & review.
+                  Chuyển sang Thảo Nguyễn • Portfolio, NCKH 2025, IELTS 7.5 và nút Chỉnh sửa.
                 </p>
-              </a>
+              </button>
 
               {/* Scenario 5 */}
-              <a
-                href="/admin"
-                className="block p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/50 border border-slate-200/90 transition group"
+              <button
+                type="button"
+                onClick={() => handleScenarioNavigate('/admin', 'user-admin')}
+                className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/50 border border-slate-200/90 transition group cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
@@ -147,9 +159,9 @@ export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onS
                   <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-slate-700" />
                 </div>
                 <p className="text-[11px] text-slate-600 mt-1 leading-snug">
-                  Trang Admin: Xử lý khiếu nại #con-104 (hoàn tiền / giải ngân) & kiểm toán tiền.
+                  Chuyển sang Admin • Xử lý khiếu nại #con-104 (hoàn tiền / giải ngân) & kiểm toán ví.
                 </p>
-              </a>
+              </button>
             </div>
 
             {/* Role Switcher */}

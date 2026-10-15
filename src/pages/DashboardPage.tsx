@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Wallet, User as UserIcon, ExternalLink } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
+import { UserAvatar } from '../components/UserAvatar';
 
 export const DashboardPage: React.FC = () => {
   const currentUser = mockStore.getCurrentUser();
@@ -20,9 +21,15 @@ export const DashboardPage: React.FC = () => {
           <div>
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className={`w-14 h-14 rounded-2xl ${currentUser.avatarColor} text-white flex items-center justify-center font-bold text-xl shrink-0 shadow-sm`}>
-                  {currentUser.avatarInitial}
-                </div>
+                <UserAvatar
+                  name={currentUser.name}
+                  avatarUrl={currentUser.avatarUrl}
+                  avatarInitial={currentUser.avatarInitial}
+                  avatarColor={currentUser.avatarColor}
+                  size="lg"
+                  shape="rounded"
+                  className="shrink-0 shadow-sm"
+                />
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-xl font-bold text-slate-900">{currentUser.name}</h1>

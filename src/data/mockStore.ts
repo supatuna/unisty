@@ -287,8 +287,82 @@ class MockStore {
     };
 
     this.data.contracts.unshift(newContract);
+
+    // Initial message
+    if (!this.data.messages) this.data.messages = [];
+    this.data.messages.push({
+      id: `msg-${Date.now()}`,
+      threadId: contractId,
+      senderId: listing.ownerId,
+      senderName: listing.ownerName,
+      senderAvatar: listing.ownerAvatar,
+      senderAvatarColor: listing.ownerAvatarColor,
+      content: `Chào ${prop.senderName}, tôi đã chọn đề xuất của bạn cho công việc "${listing.title}". Hãy trao đổi thêm ở đây nhé!`,
+      createdAt: new Date().toISOString(),
+    });
+
     this.write(this.data);
     return { success: true, contractId, message: 'Đã chọn bạn sinh viên thành công! Hãy tiến hành thanh toán để bắt đầu.' };
+  }
+
+  public createContractFromService(listingId: string, requesterId: string, scopeNotes?: string): { success: boolean; contractId: string; message: string } {
+    const listing = this.getListingById(listingId);
+    if (!listing) return { success: false, contractId: '', message: 'Không tìm thấy dịch vụ này.' };
+
+    const requester = this.getUserById(requesterId) || this.getCurrentUser();
+    const provider = this.getUserById(listing.ownerId);
+    if (!provider) return { success: false, contractId: '', message: 'Không tìm thấy bạn sinh viên cung cấp dịch vụ.' };
+
+    if (requester.id === provider.id) {
+      return { success: false, contractId: '', message: 'Bạn không thể tự đặt dịch vụ của chính mình.' };
+    }
+
+    const contractId = `con-${Date.now().toString().slice(-4)}`;
+    const dueDays = listing.deliveryDays || 3;
+    const dueAt = new Date(Date.now() + dueDays * 86400000).toISOString();
+
+    const newContract: Contract = {
+      id: contractId,
+      proposalId: `prop-direct-${contractId}`,
+      listingId: listing.id,
+      requesterId: requester.id,
+      requesterName: requester.name,
+      providerId: provider.id,
+      providerName: provider.name,
+      isProviderDue: provider.isDueVerified,
+      titleSnapshot: listing.title,
+      scopeSnapshot: scopeNotes || listing.description,
+      priceSnapshot: listing.price,
+      dueAtSnapshot: dueAt,
+      state: 'pending_payment',
+      escrowStatus: 'unfunded',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.data.contracts.unshift(newContract);
+
+    // Initial message
+    if (!this.data.messages) this.data.messages = [];
+    this.data.messages.push({
+      id: `msg-${Date.now()}`,
+      threadId: contractId,
+      senderId: requester.id,
+      senderName: requester.name,
+      senderAvatar: requester.avatarInitial,
+      senderAvatarColor: requester.avatarColor,
+      content: scopeNotes 
+        ? `Chào ${provider.name}, tôi đã đặt gói dịch vụ "${listing.title}". Yêu cầu của tôi: ${scopeNotes}`
+        : `Chào ${provider.name}, tôi đã đặt gói dịch vụ "${listing.title}". Chúng ta trao đổi chi tiết công việc ở đây nhé!`,
+      createdAt: new Date().toISOString(),
+    });
+
+    this.write(this.data);
+    return { success: true, contractId, message: 'Đã tạo yêu cầu đặt dịch vụ thành công! Vui lòng nạp tiền ký quỹ để bắt đầu.' };
+  }
+
+  public getReviewsForUser(userId: string): Review[] {
+    return (this.data.reviews || []).filter(r => r.revieweeId === userId);
   }
 
   public getContractsForUser(userId: string): Contract[] {
@@ -421,12 +495,18 @@ class MockStore {
     const requesterWallet = this.getWallet(contract.requesterId);
     const providerWallet = this.getWallet(contract.providerId);
 
-    requesterWallet.held -= contract.priceSnapshot;
+    requesterWallet.held = Math.max(0, requesterWallet.held - contract.priceSnapshot);
     providerWallet.available += contract.priceSnapshot;
 
     contract.state = 'completed';
     contract.escrowStatus = 'released';
     contract.updatedAt = new Date().toISOString();
+
+    // Đồng bộ tăng số dự án hoàn thành của sinh viên
+    const providerUser = this.getUserById(contract.providerId);
+    if (providerUser) {
+      providerUser.completedProjectsCount = (providerUser.completedProjectsCount || 0) + 1;
+    }
 
     this.write(this.data);
     return { success: true, message: 'Đã duyệt sản phẩm và gửi thù lao cho bạn sinh viên!' };
@@ -450,7 +530,18 @@ class MockStore {
       createdAt: new Date().toISOString(),
     };
 
-    this.data.reviews.push(review);
+    if (!this.data.reviews) this.data.reviews = [];
+    this.data.reviews.unshift(review);
+
+    // Cập nhật rating và số lượt đánh giá của sinh viên
+    const providerUser = this.getUserById(contract.providerId);
+    if (providerUser) {
+      const allProviderReviews = this.data.reviews.filter(r => r.revieweeId === contract.providerId);
+      const totalStars = allProviderReviews.reduce((sum, r) => sum + r.stars, 0);
+      providerUser.reviewsCount = allProviderReviews.length;
+      providerUser.averageRating = Math.round((totalStars / allProviderReviews.length) * 10) / 10;
+    }
+
     this.write(this.data);
     return { success: true, message: 'Cảm ơn bạn đã để lại đánh giá!' };
   }

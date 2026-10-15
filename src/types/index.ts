@@ -95,7 +95,7 @@ export type ContractState =
 
 export interface Contract {
   id: string;
-  proposalId: string;
+  proposalId?: string;
   listingId: string;
   requesterId: string;
   requesterName: string;

@@ -49,12 +49,16 @@ export const ListingDetailPage: React.FC = () => {
     setIsSubmitting(true);
 
     if (isService) {
-      // Đặt làm dịch vụ
-      setTimeout(() => {
-        setIsSubmitting(false);
-        showToast('Đã gửi yêu cầu đặt dịch vụ thành công! Hệ thống chuyển bạn đến phòng làm việc.', 'success');
-        navigate('/work/con-101');
-      }, 400);
+      // Đặt làm dịch vụ: Tạo hợp đồng thực tế giữa currentUser (người đặt) và listing.ownerId (sinh viên cung cấp)
+      const res = mockStore.createContractFromService(listing.id, currentUser.id, proposalScope);
+      setIsSubmitting(false);
+      if (res.success) {
+        showToast(res.message, 'success');
+        setShowProposalForm(false);
+        setTimeout(() => navigate(`/work/${res.contractId}`), 400);
+      } else {
+        showToast(res.message, 'error');
+      }
     } else {
       // Sinh viên DUE nộp đề xuất cho bài Nhu cầu
       const priceToSubmit = proposalPrice > 0 ? proposalPrice : listing.price;

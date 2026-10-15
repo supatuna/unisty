@@ -29,6 +29,7 @@ export const NewListingPage: React.FC = () => {
       ownerName: currentUser.name,
       ownerAvatar: currentUser.avatarInitial,
       ownerAvatarColor: currentUser.avatarColor,
+      ownerAvatarUrl: currentUser.avatarUrl,
       isOwnerDue: currentUser.isDueVerified,
       kind,
       category,
