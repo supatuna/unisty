@@ -181,8 +181,16 @@ export const Navbar: React.FC = () => {
                     className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-teal-700 hover:bg-teal-50 font-medium transition border-t border-slate-100 mt-1"
                   >
                     <LogIn className="w-4 h-4 text-teal-600" />
-                    <span>Đổi tài khoản / Đăng nhập SSO</span>
+                    <span>Đổi tài khoản nhanh (1-Click)</span>
                   </button>
+
+                  <Link
+                    to="/login"
+                    onClick={() => setDropdownOpen(false)}
+                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 text-[11px] font-medium transition"
+                  >
+                    <span>Mở trang đăng nhập riêng (/login)</span>
+                  </Link>
                 </div>
               </div>
             )}

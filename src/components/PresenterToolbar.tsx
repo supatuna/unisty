@@ -166,9 +166,17 @@ export const PresenterToolbar: React.FC<{ onStateChange?: () => void }> = ({ onS
 
             {/* Role Switcher */}
             <div className="mt-5 pt-4 border-t border-slate-100">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                Đổi tài khoản đăng nhập:
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Đổi tài khoản:
+                </label>
+                <a
+                  href="/login"
+                  className="text-[11px] text-teal-700 hover:text-teal-800 font-semibold hover:underline flex items-center gap-1"
+                >
+                  Trang /login <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
               <div className="space-y-1.5">
                 {allUsers.map((user) => {
                   const isSelected = user.id === currentUser.id;
