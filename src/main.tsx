@@ -5,17 +5,20 @@ import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import './index.css'
 
-// Register Service Worker for PWA with automatic update check
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then((registration) => {
-        registration.update();
-      })
-      .catch((err) => {
-        console.log('SW registration failed: ', err);
-      });
+// Tự động giải phóng Service Worker cũ để tránh lỗi kẹt cache trên các trình duyệt đã truy cập
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const reg of registrations) {
+      reg.unregister();
+    }
+  });
+}
+
+if ('caches' in window) {
+  caches.keys().then((names) => {
+    for (const name of names) {
+      caches.delete(name);
+    }
   });
 }
 
