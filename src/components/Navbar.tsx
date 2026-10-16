@@ -37,7 +37,8 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 transition-all">
+    <>
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         
         {/* Logo & Slogan */}
@@ -243,14 +244,15 @@ export const Navbar: React.FC = () => {
 
         </div>
       </div>
-
-      {/* Auth Pop-up Modal (Centered) */}
-      {showAuthModal && (
-        <AuthModal
-          initialTab={authModalTab}
-          onClose={() => setShowAuthModal(false)}
-        />
-      )}
     </header>
-  );
+
+    {/* Auth Pop-up Modal (Mounted outside header) */}
+    {showAuthModal && (
+      <AuthModal
+        initialTab={authModalTab}
+        onClose={() => setShowAuthModal(false)}
+      />
+    )}
+  </>
+);
 };

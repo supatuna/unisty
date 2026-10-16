@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ShieldCheck, GraduationCap, Building2, Shield, X, ArrowRight, Sparkles, LogIn, UserPlus, KeyRound, Mail, CheckCircle2 } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
 import { UserAvatar } from './UserAvatar';
@@ -94,13 +95,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
     window.location.reload();
   };
 
-  return (
+  // Lock body scroll when modal is mounted
+  useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
+
+  return createPortal(
     <div 
-      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
       onClick={onClose}
     >
       <div 
-        className="relative my-auto w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[88vh]"
+        className="relative my-auto w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -381,6 +391,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
