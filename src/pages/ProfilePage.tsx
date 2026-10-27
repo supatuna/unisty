@@ -26,7 +26,7 @@ export const ProfilePage: React.FC = () => {
   const allListings = mockStore.getListings();
   const userListings = allListings.filter(l => l.ownerId === (user?.id || ''));
   const userReviews = user ? mockStore.getReviewsForUser(user.id) : [];
-  const isOwner = currentUser?.id === user?.id;
+  const isOwner = Boolean(currentUser?.id) && currentUser?.id === user?.id;
 
   const openEditModal = (tab: 'basic' | 'skills' | 'achievements' | 'portfolio' = 'basic') => {
     setEditTab(tab);

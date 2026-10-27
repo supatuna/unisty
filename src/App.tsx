@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
-import { PresenterToolbar } from './components/PresenterToolbar';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { ToastContainer } from './components/Toast';
 
@@ -50,9 +49,6 @@ export const App: React.FC = () => {
 
       {/* Mobile Bottom Navigation (App native experience) */}
       <MobileBottomNav />
-
-      {/* Presenter / Reviewer Hidden DevTools Toolbar */}
-      <PresenterToolbar />
     </div>
   );
 };

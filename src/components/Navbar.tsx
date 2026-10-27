@@ -213,17 +213,16 @@ export const Navbar: React.FC = () => {
 
                       <div className="my-1 border-t border-slate-100"></div>
 
-                      <button
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          setAuthModalTab('login');
-                          setShowAuthModal(true);
-                        }}
-                        className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-teal-700 hover:bg-teal-50 font-medium transition"
-                      >
-                        <LogIn className="w-4 h-4 text-teal-600" />
-                        <span>Đổi tài khoản</span>
-                      </button>
+                      {currentUser.role === 'admin' && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-teal-800 bg-teal-50/70 hover:bg-teal-100 font-semibold transition"
+                        >
+                          <Shield className="w-4 h-4 text-teal-700" />
+                          <span>Trung tâm Quản trị Admin</span>
+                        </Link>
+                      )}
 
                       <button
                         onClick={() => {

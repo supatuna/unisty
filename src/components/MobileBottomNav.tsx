@@ -5,6 +5,7 @@ import { mockStore } from '../data/mockStore';
 
 export const MobileBottomNav: React.FC = () => {
   const location = useLocation();
+  const isLoggedIn = mockStore.isLoggedIn();
   const currentUser = mockStore.getCurrentUser();
 
   const isActive = (path: string) => {
@@ -16,8 +17,8 @@ export const MobileBottomNav: React.FC = () => {
   const navItems = [
     { label: 'Trang chủ', path: '/', icon: Home },
     { label: 'Sàn việc', path: '/marketplace', icon: Compass },
-    { label: 'Dự án', path: '/dashboard', icon: Briefcase },
-    { label: 'Hồ sơ', path: `/profiles/${currentUser.id}`, icon: User },
+    { label: 'Dự án', path: isLoggedIn ? '/dashboard' : '/login', icon: Briefcase },
+    { label: isLoggedIn ? 'Hồ sơ' : 'Đăng nhập', path: isLoggedIn ? `/profiles/${currentUser.id}` : '/login', icon: User },
   ];
 
   return (

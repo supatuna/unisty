@@ -5,25 +5,29 @@ echo      DANG KHOI DONG NEN TANG UNISTY (DUE NETWORK)
 echo ============================================================
 echo.
 
-cd /d "C:\Users\Phuong Thao\.gemini\antigravity\scratch\unisty"
+if exist "C:\Users\nguye\unisty" (
+    cd /d "C:\Users\nguye\unisty"
+) else (
+    cd /d "%~dp0"
+)
 
-echo [1/2] Dang mo trinh duyet web...
-timeout /t 1 /nobreak >nul
-start http://localhost:5173/
-
-echo [2/2] Dang khoi dong may chu Vite...
+echo Dang khoi dong may chu Vite va mo trinh duyet...
 echo.
 echo ============================================================
-echo Web dang chay tai: http://localhost:5173/
+echo Web se tu dong mo tai: http://localhost:5173/
 echo (De dung web, ban chi can dong cua so nay)
 echo ============================================================
 echo.
 
-"C:\Users\Phuong Thao\.bun\bin\bun.exe" run dev
+if exist "%USERPROFILE%\.bun\bin\bun.exe" (
+    "%USERPROFILE%\.bun\bin\bun.exe" run dev -- --open
+) else (
+    bun run dev -- --open
+)
 if %errorlevel% neq 0 (
     echo.
     echo Thu lai bang npm.cmd...
-    call npm.cmd run dev
+    call npm.cmd run dev -- --open
 )
 
 pause

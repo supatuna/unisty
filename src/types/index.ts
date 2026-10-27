@@ -176,7 +176,7 @@ export interface LedgerEntry {
   id: string;
   walletId: string;
   contractId?: string;
-  action: 'credit_grant' | 'hold' | 'release' | 'refund';
+  action: 'credit_grant' | 'hold' | 'release' | 'refund' | 'top_up' | 'withdraw';
   delta: number;
   reference: string;
   createdAt: string;

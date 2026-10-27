@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ShieldCheck, GraduationCap, Building2, Shield, X, ArrowRight, Sparkles, LogIn, UserPlus, KeyRound, Mail, CheckCircle2 } from 'lucide-react';
+import { GraduationCap, Building2, X, Sparkles, LogIn, UserPlus, Mail, Lock } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
-import { UserAvatar } from './UserAvatar';
+import { supabaseService } from '../lib/supabaseService';
 import { showToast } from './Toast';
 
 interface AuthModalProps {
@@ -16,46 +16,89 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
 
   // Register Form State
   const [customName, setCustomName] = useState('');
+  const [customMssv, setCustomMssv] = useState('');
+  const [customEmail, setCustomEmail] = useState('');
+  const [customPassword, setCustomPassword] = useState('');
   const [customClass, setCustomClass] = useState('50K32.3');
   const [customRole, setCustomRole] = useState<'due' | 'guest'>('due');
-  const [customSkills, setCustomSkills] = useState('Canva, PowerPoint');
-  const [isCreating, setIsCreating] = useState(false);
+  const [customSkills, setCustomSkills] = useState('Canva, PowerPoint, SPSS');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Login Email/SSO Mock State
+  // Login Email State
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
   const allUsers = mockStore.getAllUsers();
-  const currentUserId = mockStore.isLoggedIn() ? mockStore.getCurrentUser().id : null;
 
-  const handleSelectUser = (userId: string) => {
-    const selected = allUsers.find(u => u.id === userId);
-    mockStore.setCurrentUserId(userId);
-    showToast(`Đăng nhập thành công: ${selected?.name || userId}`, 'success');
-    if (onSuccess) onSuccess();
-    onClose();
-    window.location.reload();
-  };
+  // Auto-generate suggested email based on name and role
+  useEffect(() => {
+    if (customName.trim()) {
+      const cleanName = customName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
+      if (customRole === 'due') {
+        setCustomEmail(`${cleanName}@due.edu.vn`);
+      } else {
+        setCustomEmail(`${cleanName}@gmail.com`);
+      }
+    }
+  }, [customName, customRole]);
 
-  const handleCreateCustomUser = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customName.trim()) return;
+    if (!customEmail.trim() || !customPassword.trim()) {
+      showToast('Vui lòng điền đầy đủ email và mật khẩu.', 'error');
+      return;
+    }
+    if (customPassword.length < 6) {
+      showToast('Mật khẩu phải có tối thiểu 6 ký tự.', 'error');
+      return;
+    }
 
-    setIsCreating(true);
+    setIsSubmitting(true);
+    const parsedSkills = customSkills.split(',').map(s => s.trim()).filter(Boolean);
+
+    // 1. Thử đăng ký với Supabase Cloud nếu có cấu hình
+    if (supabaseService.isAvailable()) {
+      const result = await supabaseService.signUp({
+        name: customName.trim(),
+        email: customEmail.trim(),
+        password: customPassword,
+        role: customRole,
+        studentClass: customRole === 'due' ? customClass : undefined,
+        skills: parsedSkills,
+      });
+
+      if (result.success && result.user) {
+        const users = (mockStore as any).data.users;
+        users.unshift(result.user);
+        mockStore.setCurrentUserId(result.user.id);
+        (mockStore as any).write((mockStore as any).data);
+
+        setIsSubmitting(false);
+        showToast(`Đăng ký thành công! Đã cấp 1.000.000đ vào ví UNISTY.`, 'success');
+        if (onSuccess) onSuccess();
+        onClose();
+        window.location.reload();
+        return;
+      } else if (result.error) {
+        showToast(`Lỗi: ${result.error}`, 'error');
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    // 2. Fallback sang LocalStorage nếu chưa có mạng/Supabase
     const newUserId = `user-custom-${Date.now()}`;
     const initial = customName.trim().charAt(0).toUpperCase();
-    const parsedSkills = customSkills.split(',').map(s => s.trim()).filter(Boolean);
 
     const newUser = {
       id: newUserId,
       name: customName.trim(),
-      email: customRole === 'due'
-        ? `${customName.toLowerCase().replace(/\s+/g, '')}@due.edu.vn`
-        : `${customName.toLowerCase().replace(/\s+/g, '')}@gmail.com`,
+      email: customEmail.trim(),
       avatarInitial: initial,
       avatarColor: customRole === 'due' ? 'bg-teal-600' : 'bg-indigo-600',
       role: customRole === 'due' ? ('due' as const) : ('member' as const),
-      isDueVerified: customRole === 'due',
+      isDueVerified: customRole === 'due' || customEmail.toLowerCase().endsWith('@due.edu.vn'),
       isLocked: false,
       major: customRole === 'due' ? `Sinh viên Lớp ${customClass} — ĐH Kinh tế (DUE)` : 'Khách hàng ngoài trường',
       studentClass: customRole === 'due' ? customClass : undefined,
@@ -67,32 +110,64 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
       createdAt: new Date().toISOString(),
     };
 
-    // Add to mockStore users
     const users = (mockStore as any).data.users;
     users.push(newUser);
     mockStore.setCurrentUserId(newUserId);
     (mockStore as any).write((mockStore as any).data);
 
-    setIsCreating(false);
+    setIsSubmitting(false);
     showToast(`Đăng ký thành công! Chào mừng ${newUser.name}`, 'success');
     if (onSuccess) onSuccess();
     onClose();
     window.location.reload();
   };
 
-  const handleEmailLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail.trim()) return;
+    if (!loginEmail.trim() || !loginPassword.trim()) {
+      showToast('Vui lòng nhập đầy đủ email và mật khẩu.', 'error');
+      return;
+    }
 
-    // Try finding matching user by email
-    const found = allUsers.find(u => u.email.toLowerCase().includes(loginEmail.trim().toLowerCase()));
-    const targetUser = found || allUsers[0];
+    setIsSubmitting(true);
 
-    mockStore.setCurrentUserId(targetUser.id);
-    showToast(`Đăng nhập thành công với tài khoản: ${targetUser.name}`, 'success');
-    if (onSuccess) onSuccess();
-    onClose();
-    window.location.reload();
+    // 1. Thử đăng nhập tài khoản thật với Supabase
+    if (supabaseService.isAvailable()) {
+      const result = await supabaseService.signIn(loginEmail, loginPassword);
+      if (result.success && result.user) {
+        const users = (mockStore as any).data.users;
+        const existingIdx = users.findIndex((u: any) => u.id === result.user!.id);
+        if (existingIdx !== -1) {
+          users[existingIdx] = result.user;
+        } else {
+          users.unshift(result.user);
+        }
+        mockStore.setCurrentUserId(result.user.id);
+        (mockStore as any).write((mockStore as any).data);
+
+        setIsSubmitting(false);
+        showToast(`Đăng nhập thành công! Xin chào ${result.user.name}`, 'success');
+        if (onSuccess) onSuccess();
+        onClose();
+        window.location.reload();
+        return;
+      }
+    }
+
+    // 2. Thử tìm trong danh sách người dùng nội bộ
+    const found = allUsers.find(u => u.email.toLowerCase() === loginEmail.trim().toLowerCase());
+    if (found) {
+      mockStore.setCurrentUserId(found.id);
+      setIsSubmitting(false);
+      showToast(`Đăng nhập thành công: ${found.name}`, 'success');
+      if (onSuccess) onSuccess();
+      onClose();
+      window.location.reload();
+      return;
+    }
+
+    setIsSubmitting(false);
+    showToast('Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.', 'error');
   };
 
   // Lock body scroll when modal is mounted
@@ -110,7 +185,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
       onClick={onClose}
     >
       <div 
-        className="relative my-auto w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]"
+        className="relative my-auto w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-150 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -120,13 +195,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
               <span className="text-teal-400">U</span>N
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+              <h3 className="font-bold text-slate-900 text-base">
                 Tài khoản UNISTY
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
-                  DUE Network
-                </span>
               </h3>
-              <p className="text-[11px] text-slate-500">Mạng lưới sinh viên ĐH Kinh tế – ĐH Đà Nẵng</p>
+              <p className="text-[11px] text-slate-500">Nền tảng kỹ năng & Việc làm tự do sinh viên DUE</p>
             </div>
           </div>
           <button
@@ -166,124 +238,59 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
           </button>
         </div>
 
-        {/* Content Area - Scrollable */}
-        <div className="overflow-y-auto pr-1 py-3 flex-1 mt-2">
+        {/* Content Area */}
+        <div className="py-4">
           {activeTab === 'login' && (
-            <div className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-3.5">
               <div>
-                <p className="text-xs font-bold text-slate-800 mb-1 flex items-center justify-between">
-                  <span>Chọn tài khoản có sẵn (1-Click Demo):</span>
-                  <span className="text-[10px] text-teal-600 font-medium">Khuyên dùng thử</span>
-                </p>
-                <p className="text-[11px] text-slate-500 mb-2.5">
-                  Bấm để đăng nhập ngay với vai trò tương ứng:
-                </p>
-
-                <div className="space-y-2">
-                  {allUsers.map((u) => {
-                    const isSelected = u.id === currentUserId;
-                    let roleLabel = 'Sinh viên DUE';
-                    if (u.id === 'user-due-thao') roleLabel = 'Người làm • Thiết kế Canva';
-                    else if (u.id === 'user-due-nam') roleLabel = 'Người thuê • Nghiên cứu khoa học';
-                    else if (u.id === 'user-due-halinh') roleLabel = 'Người làm • Chuyên gia SPSS';
-                    else if (u.id === 'user-client-tuan') roleLabel = 'Khách ngoài trường • Chuỗi F&B';
-                    else if (u.id === 'user-admin') roleLabel = 'Ban Quản trị DUE • Hòa giải tranh chấp';
-
-                    return (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => handleSelectUser(u.id)}
-                        className={`w-full p-2.5 rounded-2xl border text-left transition flex items-center justify-between gap-3 ${
-                          isSelected
-                            ? 'border-teal-500 bg-teal-50/70 shadow-xs'
-                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <UserAvatar
-                            name={u.name}
-                            avatarUrl={u.avatarUrl}
-                            avatarInitial={u.avatarInitial}
-                            avatarColor={u.avatarColor}
-                            size="sm"
-                            shape="circle"
-                            className="shrink-0"
-                          />
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-xs font-bold text-slate-900 truncate">{u.name}</span>
-                              {u.isDueVerified && (
-                                <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-teal-100 text-teal-800">
-                                  <ShieldCheck className="w-2.5 h-2.5 text-teal-600" />
-                                  DUE
-                                </span>
-                              )}
-                              {u.role === 'admin' && (
-                                <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-slate-900 text-white">
-                                  Admin
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
-                              {roleLabel}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 flex items-center gap-1 text-xs font-semibold">
-                          {isSelected ? (
-                            <span className="text-teal-700 bg-white px-2 py-0.5 rounded-lg border border-teal-200 text-[11px]">
-                              Đang dùng
-                            </span>
-                          ) : (
-                            <span className="text-slate-500 group-hover:text-slate-800 flex items-center text-[11px] px-2 py-0.5 rounded-lg bg-slate-100">
-                              Chọn <ArrowRight className="w-3 h-3 ml-0.5" />
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* SSO/Email Form */}
-              <div className="pt-2 border-t border-slate-100">
-                <p className="text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Hoặc đăng nhập bằng Email sinh viên:</span>
-                </p>
-
-                <form onSubmit={handleEmailLogin} className="space-y-2.5">
+                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                  Email của bạn:
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="email"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="Ví dụ: thaonguyen@due.edu.vn"
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500"
+                    placeholder="ví dụ: thaonguyen@due.edu.vn"
+                    required
+                    className="w-full text-xs pl-9 p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                  Mật khẩu:
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="password"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="Mật khẩu (tùy ý cho bản demo)"
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500"
+                    placeholder="Nhập mật khẩu"
+                    required
+                    className="w-full text-xs pl-9 p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   />
-                  <button
-                    type="submit"
-                    className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5"
-                  >
-                    <LogIn className="w-3.5 h-3.5 text-teal-400" />
-                    <span>Đăng nhập hệ thống</span>
-                  </button>
-                </form>
+                </div>
               </div>
-            </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-teal-400" />
+                  <span>{isSubmitting ? 'Đang xác thực...' : 'Đăng nhập vào hệ thống'}</span>
+                </button>
+              </div>
+            </form>
           )}
 
           {activeTab === 'register' && (
-            <form onSubmit={handleCreateCustomUser} className="space-y-3 pt-1">
+            <form onSubmit={handleRegister} className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                   Bạn tham gia UNISTY với tư cách:
@@ -330,6 +337,66 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
                 />
               </div>
 
+              {customRole === 'due' ? (
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1 flex items-center justify-between">
+                    <span>Mã số sinh viên (MSSV): <span className="text-rose-500">*</span></span>
+                    <span className="text-[10px] text-teal-700 font-medium">Nhận tích xanh @due.edu.vn</span>
+                  </label>
+                  <div className="flex rounded-xl border border-slate-200 overflow-hidden focus-within:border-teal-500 focus-within:ring-1 focus-within:ring-teal-500 bg-white">
+                    <input
+                      type="text"
+                      value={customMssv}
+                      onChange={(e) => {
+                        const mssv = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                        setCustomMssv(mssv);
+                        setCustomEmail(mssv ? `${mssv.toLowerCase()}@due.edu.vn` : '');
+                      }}
+                      placeholder="Ví dụ: 221121514123"
+                      required
+                      className="w-full text-xs p-2.5 focus:outline-none"
+                    />
+                    <span className="bg-slate-100 text-slate-600 text-xs px-3 py-2.5 font-semibold border-l border-slate-200 flex items-center select-none shrink-0">
+                      @due.edu.vn
+                    </span>
+                  </div>
+                  {customMssv && (
+                    <p className="text-[10px] text-teal-600 font-mono mt-1">
+                      Email đăng ký: {customMssv.toLowerCase()}@due.edu.vn
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Email đăng ký: <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={customEmail}
+                    onChange={(e) => setCustomEmail(e.target.value)}
+                    placeholder="tenban@gmail.com"
+                    required
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                  Mật khẩu: <span className="text-rose-500">* (tối thiểu 6 ký tự)</span>
+                </label>
+                <input
+                  type="password"
+                  value={customPassword}
+                  onChange={(e) => setCustomPassword(e.target.value)}
+                  placeholder="Nhập mật khẩu của bạn"
+                  required
+                  minLength={6}
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                />
+              </div>
+
               {customRole === 'due' && (
                 <div>
                   <label className="text-[11px] font-semibold text-slate-700 block mb-1">
@@ -345,27 +412,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, initia
                 </div>
               )}
 
-              <div>
-                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                  Kỹ năng chính:
-                </label>
-                <input
-                  type="text"
-                  value={customSkills}
-                  onChange={(e) => setCustomSkills(e.target.value)}
-                  placeholder="Ví dụ: Thiết kế Slide, Canva, Tin học văn phòng"
-                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                />
-              </div>
-
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={!customName.trim() || isCreating}
+                  disabled={!customName.trim() || isSubmitting}
                   className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Đăng ký & Đăng nhập ngay</span>
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>{isSubmitting ? 'Đang đăng ký...' : 'Đăng ký'}</span>
                 </button>
               </div>
             </form>

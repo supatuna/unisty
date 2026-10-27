@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShieldCheck, Clock, Calendar, AlertCircle, ExternalLink, CheckCircle2, UserCheck } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Clock, Calendar, AlertCircle, ExternalLink, CheckCircle2, UserCheck, LogIn } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
 import { showToast } from '../components/Toast';
 import { UserAvatar } from '../components/UserAvatar';
@@ -8,6 +8,7 @@ import { UserAvatar } from '../components/UserAvatar';
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isLoggedIn = mockStore.isLoggedIn();
   const [proposalScope, setProposalScope] = useState('');
   const [proposalPrice, setProposalPrice] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -293,7 +294,20 @@ export const ListingDetailPage: React.FC = () => {
             </div>
 
             {/* Action CTA */}
-            {isOwner ? (
+            {!isLoggedIn ? (
+              <div className="space-y-2.5">
+                <Link
+                  to="/login"
+                  className="w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-md transition flex items-center justify-center gap-1.5"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Đăng nhập để {isService ? 'đặt dịch vụ này' : 'ứng tuyển nhận việc'}</span>
+                </Link>
+                <p className="text-[11px] text-slate-500 text-center">
+                  Bạn cần đăng nhập để giao dịch và ký quỹ an toàn.
+                </p>
+              </div>
+            ) : isOwner ? (
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-700 font-medium">
                 Đây là bài đăng của bạn. Hãy kiểm tra các đề xuất ứng tuyển ở bảng bên trái.
               </div>

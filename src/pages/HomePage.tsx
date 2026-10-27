@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShieldCheck, Sparkles, ChevronRight } from 'lucide-react';
+import { Search, ShieldCheck, Sparkles, ChevronRight, LogIn, Compass } from 'lucide-react';
 import { mockStore } from '../data/mockStore';
 import { ListingCard } from '../components/ListingCard';
 
@@ -83,6 +83,26 @@ export const HomePage: React.FC = () => {
               </Link>
             ))}
           </div>
+
+          {/* Unauthenticated Welcome CTA */}
+          {!mockStore.isLoggedIn() && (
+            <div className="mt-8 pt-6 border-t border-slate-200/60 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                to="/login"
+                className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-sm transition flex items-center gap-2"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Đăng nhập để bắt đầu</span>
+              </Link>
+              <Link
+                to="/marketplace"
+                className="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs border border-slate-200/90 shadow-sm transition flex items-center gap-2"
+              >
+                <Compass className="w-3.5 h-3.5 text-teal-600" />
+                <span>Tham quan sàn trước</span>
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

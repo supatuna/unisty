@@ -4,6 +4,8 @@ echo ============================================================
 echo         DAY CODE UNISTY LEN GITHUB (DUE 50K32.3)
 echo ============================================================
 echo.
+cd /d "%~dp0"
+set "PATH=%USERPROFILE%\.git-bin\cmd;%PATH%"
 echo Hay tao mot repository moi tren GitHub (https://github.com/new).
 echo Dat ten repository la: unisty (chon che do Public hoac Private).
 echo KHONG can tich chon Add a README file vi du an da co san.

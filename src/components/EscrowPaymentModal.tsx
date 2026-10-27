@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ShieldCheck, QrCode, Wallet, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { ShieldCheck, QrCode, Wallet, CheckCircle2, AlertCircle, X, Copy, Check } from 'lucide-react';
 import { Contract } from '../types';
 import { mockStore } from '../data/mockStore';
+import { showToast } from './Toast';
 
 interface EscrowPaymentModalProps {
   contract: Contract;
@@ -21,6 +22,23 @@ export const EscrowPaymentModal: React.FC<EscrowPaymentModalProps> = ({
   const currentUser = mockStore.getCurrentUser();
   const wallet = mockStore.getWallet(currentUser.id);
   const hasEnoughBalance = wallet.available >= contract.priceSnapshot;
+  const [copiedMemo, setCopiedMemo] = useState(false);
+  const [copiedAccount, setCopiedAccount] = useState(false);
+
+  const transferMemo = `UNISTY ESCROW ${contract.id.slice(-6).toUpperCase()}`;
+
+  const handleCopy = (text: string, type: 'memo' | 'account') => {
+    navigator.clipboard.writeText(text);
+    if (type === 'memo') {
+      setCopiedMemo(true);
+      setTimeout(() => setCopiedMemo(false), 2000);
+      showToast('Đã sao chép nội dung chuyển khoản!', 'success');
+    } else {
+      setCopiedAccount(true);
+      setTimeout(() => setCopiedAccount(false), 2000);
+      showToast('Đã sao chép số tài khoản!', 'success');
+    }
+  };
 
   const handleConfirmPayment = () => {
     setIsProcessing(true);
@@ -117,19 +135,72 @@ export const EscrowPaymentModal: React.FC<EscrowPaymentModalProps> = ({
             )}
           </div>
         ) : (
-          <div className="text-center p-3 mb-5 bg-slate-50 rounded-2xl border border-slate-200/80">
-            {/* SVG Mock QR Code */}
-            <div className="w-36 h-36 mx-auto bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center relative">
-              <div className="w-full h-full bg-slate-900 rounded-lg flex items-center justify-center text-white text-[10px] text-center p-2 font-mono">
-                [ MÃ VIETQR SANDBOX ]
-                <br />
-                UNISTY-ESCROW
-              </div>
-              <span className="absolute bottom-1 text-[9px] text-slate-400 font-sans">Mô phỏng thanh toán</span>
+          <div className="text-center p-4 mb-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-100/70 text-teal-800 text-[11px] font-semibold">
+              <QrCode className="w-3.5 h-3.5" />
+              <span>VietQR Ký quỹ Bảo chứng Escrow</span>
             </div>
-            <p className="text-[11px] text-slate-500 mt-2">
-              Quét bằng ứng dụng ngân hàng bất kỳ để chuyển tiền tạm giữ vào tài khoản bảo đảm.
-            </p>
+
+            {/* Real Dynamic QR Code pointing to this web contract */}
+            <div className="w-44 h-44 mx-auto bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(
+                  typeof window !== 'undefined' 
+                    ? `${window.location.origin}/work/${contract.id}?payment=escrow_verified&amount=${contract.priceSnapshot}` 
+                    : `https://unisty.due.edu.vn/work/${contract.id}`
+                )}&color=0f172a`} 
+                alt="Mã VietQR Escrow UNISTY"
+                className="w-full h-full object-contain rounded-lg"
+              />
+            </div>
+
+            {/* Bank Transfer Details Table */}
+            <div className="bg-white rounded-xl p-3 border border-slate-200/80 text-left text-xs space-y-2">
+              <div className="flex justify-between items-center text-slate-500">
+                <span>Ngân hàng thụ hưởng:</span>
+                <span className="font-bold text-slate-800">MB Bank (Quân Đội)</span>
+              </div>
+
+              <div className="flex justify-between items-center text-slate-500">
+                <span>Số tài khoản:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono font-bold text-slate-800">8888 6688 9999</span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy('888866889999', 'account')}
+                    className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-teal-600 transition"
+                    title="Sao chép STK"
+                  >
+                    {copiedAccount ? <Check className="w-3.5 h-3.5 text-teal-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center text-slate-500">
+                <span>Chủ tài khoản:</span>
+                <span className="font-bold text-slate-800">UNISTY DUE - 50K32</span>
+              </div>
+
+              <div className="flex justify-between items-center text-slate-500">
+                <span>Số tiền ký quỹ:</span>
+                <span className="font-extrabold text-teal-700 text-sm">{contract.priceSnapshot.toLocaleString('vi-VN')} VNĐ</span>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-between items-center bg-teal-50/60 p-2.5 rounded-xl border border-teal-100/70">
+                <div>
+                  <div className="text-[10px] text-teal-800 font-semibold uppercase tracking-wider">Nội dung chuyển khoản:</div>
+                  <div className="font-mono font-black text-teal-900 text-xs tracking-wider mt-0.5">{transferMemo}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(transferMemo, 'memo')}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-[11px] transition shadow-xs"
+                >
+                  {copiedMemo ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedMemo ? 'Đã sao chép' : 'Sao chép'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

@@ -4,6 +4,9 @@
 
 ---
 
+> 📋 **Xem nhanh:** Đọc toàn bộ lịch sử nâng cấp hệ thống & kịch bản trình diễn tại [**LICHSU_CHINHSUA.md**](./LICHSU_CHINHSUA.md).  
+> 👥 **Danh sách tài khoản diễn tập:** Xem chi tiết tại [**Tai-Khoan-UNISTY.csv**](./Tai-Khoan-UNISTY.csv).
+
 ## 👥 Nhóm tác giả thực hiện (Lớp 50K32.3)
 1. **Nguyễn Tuấn Anh**
 2. **Nguyễn Thu Hiền**

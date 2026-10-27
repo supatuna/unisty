@@ -7,6 +7,7 @@ import { showToast } from '../components/Toast';
 
 export const NewListingPage: React.FC = () => {
   const navigate = useNavigate();
+  const isLoggedIn = mockStore.isLoggedIn();
   const currentUser = mockStore.getCurrentUser();
 
   const [kind, setKind] = useState<ListingKind>(currentUser.isDueVerified ? 'service' : 'need');
@@ -16,6 +17,34 @@ export const NewListingPage: React.FC = () => {
   const [price, setPrice] = useState(200000);
   const [deliveryDays, setDeliveryDays] = useState(2);
   const [dueAt, setDueAt] = useState('');
+
+  if (!isLoggedIn) {
+    return (
+      <div className="max-w-md mx-auto py-24 px-4 text-center space-y-4">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center">
+          <ArrowLeft className="w-7 h-7" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Yêu cầu đăng nhập</h2>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          Vui lòng đăng nhập bằng tài khoản sinh viên DUE hoặc đối tác trước khi đăng tin lên sàn.
+        </p>
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            to="/login"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-sm transition"
+          >
+            Đăng nhập ngay
+          </Link>
+          <Link
+            to="/marketplace"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition"
+          >
+            Quay lại sàn
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
